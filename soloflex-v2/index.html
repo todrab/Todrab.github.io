@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Soloflex Buddy</title>
+    <style>
+        :root { --blue: #0A84FF; --bg: #000000; --card: #1C1C1E; --text: #FFFFFF; --secondary: #8E8E93; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
+        .header { padding: 20px; background: var(--card); position: sticky; top: 0; z-index: 10; border-bottom: 0.5px solid #333; }
+        .container { padding: 15px; }
+        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { background: var(--blue); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; width: 100%; cursor: pointer; margin-top: 10px; }
+        .btn-sec { background: #3A3A3C; color: white; }
+        .input-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; background: #2C2C2E; border: 1px solid #3A3A3C; color: white; border-radius: 8px; box-sizing: border-box; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #161617; display: flex; border-top: 0.5px solid #333; padding: 10px 0; }
+        .nav-item { flex: 1; text-align: center; font-size: 11px; color: var(--secondary); text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--blue); }
+        .list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #333; padding: 12px 0; cursor: pointer; }
+        .muscle-tag { font-size: 10px; color: var(--blue); text-transform: uppercase; font-weight: bold; }
+        .hidden { display: none; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="header"><h1 id="title" style="margin:0; font-size: 24px;">Dashboard</h1></div>
+
+<div id="content" class="container"></div>
+
+<nav class="nav">
+    <div class="nav-item active" onclick="nav('dash')">Dash</div>
+    <div class="nav-item" onclick="nav('workouts')">Workouts</div>
+    <div class="nav-item" onclick="nav('library')">Library</div>
+    <div class="nav-item" onclick="nav('profile')">Profile</div>
+    <div class="nav-item" onclick="nav('history')">History</div>
+</nav>
+
+<script>
+    // --- 1. FULL AUDITED DATASET ---
+    const library = [
+        {name: "Back of Neck Press", cat: "Upper", muscle: "Rear Deltoids", inst: "Pin at shoulder height. Press upward from behind neck."},
+        {name: "Bench Press", cat: "Upper", muscle: "Pectorals", inst: "Pin at hole #17. Swivel neck under bar. Push up."},
+        {name: "Bench Row", cat: "Upper", muscle: "Lats", inst: "Lie face down on bench. Pull bar toward chest."},
+        {name: "Bent Over Row", cat: "Upper", muscle: "Lats", inst: "Stand facing frame. Bend at waist. Pull bar to stomach."},
+        {name: "Bicep Curl/Lat Pulldown", cat: "Upper", muscle: "Lats/Biceps", inst: "Arm at shoulder height. Pull bar downward."},
+        {name: "Butterfly", cat: "Upper", muscle: "Pectorals", inst: "Load pin 1 inch above head. Squeeze pads."},
+        {name: "Dip", cat: "Upper", muscle: "Triceps", inst: "Hole #9. Use handles to lift body weight."},
+        {name: "Dorsi Bar Pulldown", cat: "Upper", muscle: "Lats", inst: "Arm high. Pull bar to top of shoulders."},
+        {name: "Haney Shrug", cat: "Upper", muscle: "Traps", inst: "Bar behind back. Grasp outside hip width. Shrug."},
+        {name: "Incline Bench Press", cat: "Upper", muscle: "Upper Pecs", inst: "30-degree incline. Press up from chest."},
+        {name: "Military Press", cat: "Upper", muscle: "Deltoids", inst: "Arm at collarbone. Press bar overhead."},
+        {name: "Negative Pull Up", cat: "Upper", muscle: "Lats", inst: "Hole #2. Remove feet, lower slowly."},
+        {name: "Pull Up", cat: "Upper", muscle: "Lats/Biceps", inst: "Invert arm to hole #2. Pull chin above bar."},
+        {name: "Rowing with Leg Extension", cat: "Upper", muscle: "Lats", inst: "Sit straddling leg extension. Pull pivot arm."},
+        {name: "Shoulder Shrug", cat: "Upper", muscle: "Traps", inst: "Elevate shoulders toward ears."},
+        {name: "Standing Bicep Curl", cat: "Upper", muscle: "Biceps", inst: "Use curl tubes. Curl up from fingertips."},
+        {name: "Tricep Extension", cat: "Upper", muscle: "Triceps", inst: "Hole #14. Facing away. Press down."},
+        {name: "Tricep Press", cat: "Upper", muscle: "Triceps", inst: "Facing away. Press up from shoulders."},
+        {name: "Tricep Pushdown", cat: "Upper", muscle: "Triceps", inst: "Press down to thighs."},
+        {name: "Upright Row", cat: "Upper", muscle: "Traps", inst: "Pull to chin, elbows high."},
+        {name: "Body Curl", cat: "Mid", muscle: "Lower Abs", inst: "Incline bench. Raise legs to mainframe."},
+        {name: "Crunch", cat: "Mid", muscle: "Abs", inst: "Standard abdominal curl."},
+        {name: "Incline Sit Up", cat: "Mid", muscle: "Upper Abs", inst: "Feet under load pin. Curl 3/4 way."},
+        {name: "Leg Bend", cat: "Mid", muscle: "Lower Abs", inst: "Incline bench. Curl knees to chest."},
+        {name: "Roman Chair Sit Up", cat: "Mid", muscle: "Abs", inst: "Stabilizer pin. Sit sideways. Recline 180°."},
+        {name: "Calf Raise", cat: "Lower", muscle: "Calves", inst: "Heels off bench edge. Extend up."},
+        {name: "Dead Lift", cat: "Lower", muscle: "Back/Quads", inst: "Hole #24. Straddle arm. Lift with legs."},
+        {name: "Donkey Press", cat: "Lower", muscle: "Calves", inst: "Lie on bench. Press bar with toes."},
+        {name: "Frontal Squat", cat: "Lower", muscle: "Quads/Glutes", inst: "Face frame. Bar on front shoulders. Squat."},
+        {name: "Leg Curl", cat: "Lower", muscle: "Hamstrings", inst: "Lie face down. Curl heels to buttocks."},
+        {name: "Leg Extension", cat: "Lower", muscle: "Quads", inst: "Sit facing away. Extend legs forward."},
+        {name: "Leg Press", cat: "Lower", muscle: "Quads/Glutes", inst: "Lie on bench. Press feet up."},
+        {name: "Squat", cat: "Lower", muscle: "Quads/Glutes", inst: "Stand on bench. Bar on shoulders. Squat."},
+        {name: "Stiff Leg Dead Lift", cat: "Lower", muscle: "Lower Back", inst: "Hole #24. Straight legs. Bend at waist."}
+    ];
+
+    const officialPrograms = {
+        "Beginning": {
+            "Mon (C/B)": ["Bench Press", "Dorsi Bar Pulldown", "Incline Bench Press", "Bent Over Row", "Dip", "Pull Up", "Butterfly", "Rowing with Leg Extension"],
+            "Wed (L/A)": ["Squat", "Dead Lift", "Leg Press", "Leg Extension", "Leg Curl", "Calf Raise", "Leg Bend", "Incline Sit Up"],
+            "Fri (S/A)": ["Military Press", "Standing Bicep Curl", "Tricep Pushdown", "Shoulder Shrug", "Back of Neck Press", "Tricep Press", "Upright Row"]
+        },
+        "Advanced": {
+            "Mon (Load-C/S/T)": ["Incline Bench Press", "Bench Press", "Butterfly", "Military Press", "Back of Neck Press", "Dip", "Tricep Press", "Incline Sit Up"],
+            "Tue (Load-L/B/B/T)": ["Squat", "Calf Raise", "Leg Extension", "Leg Curl", "Pull Up", "Bent Over Row", "Shoulder Shrug", "Standing Bicep Curl", "Leg Bend"],
+            "Thu (Time-C/S/T)": ["Butterfly", "Bench Press", "Incline Bench Press", "Back of Neck Press", "Military Press", "Tricep Pushdown", "Tricep Extension", "Body Curl"],
+            "Fri (Time-L/B/B/T)": ["Leg Press", "Donkey Press", "Dead Lift", "Dorsi Bar Pulldown", "Bicep Curl/Lat Pulldown", "Upright Row", "Standing Bicep Curl", "Roman Chair Sit Up"]
+        }
+    };
+
+    // --- 2. LOGIC & STORAGE ---
+    let logs = JSON.parse(localStorage.getItem('logs')) || [];
+    let profile = JSON.parse(localStorage.getItem('profile')) || { weight: 180, pins: {} };
+    let sessionStart = null;
+
+    function nav(target) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelector(`.nav-item[onclick="nav('${target}')"]`).classList.add('active');
+        document.getElementById('title').innerText = target.charAt(0).toUpperCase() + target.slice(1);
+        render(target);
+    }
+
+    function render(target) {
+        const div = document.getElementById('content');
+        div.innerHTML = "";
+
+        if (target === 'dash') {
+            const vol = logs.reduce((a, b) => a + (b.w * b.r), 0);
+            const days = new Set(logs.map(l => new Date(l.d).toLocaleDateString())).size;
+            div.innerHTML = `
+                <div class="grid">
+                    <div class="card"><small>Volume</small><br><strong>${vol.toLocaleString()} lbs</strong></div>
+                    <div class="card"><small>Days</small><br><strong>${days}</strong></div>
+                </div>
+                <div class="card"><h3>Est. Calories: ${Math.round((6.0 * 3.5 * (profile.weight / 2.2) / 200) * (logs.length * 2))}</h3></div>
+            `;
+        } else if (target === 'workouts') {
+            Object.keys(officialPrograms).forEach(p => {
+                div.innerHTML += `<h3>${p}</h3>`;
+                Object.keys(officialPrograms[p]).forEach(day => {
+                    div.innerHTML += `<div class="card list-item" onclick="startRoutine('${day}', '${p}')">${day} <span style="color:#8E8E93">></span></div>`;
+                });
+            });
+        } else if (target === 'library') {
+            library.forEach(ex => {
+                div.innerHTML += `
+                    <div class="card list-item" onclick="openExercise('${ex.name}')">
+                        <div><strong>${ex.name}</strong><br><span class="muscle-tag">${ex.muscle}</span></div>
+                        <span style="color:#8E8E93">></span>
+                    </div>`;
+            });
+        } else if (target === 'profile') {
+            div.innerHTML = `
+                <div class="card"><label>Weight (lbs)</label><br><input type="number" value="${profile.weight}" onchange="updateWeight(this.value)"></div>
+                <h3>Saved Pins</h3>
+                <div class="card">
+                    ${library.map(ex => `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:12px">${ex.name}</span>
+                            <input type="text" style="width:50px; padding:4px" value="${profile.pins[ex.name] || ''}" onchange="updatePin('${ex.name}', this.value)">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else if (target === 'history') {
+            const grouped = logs.reduce((acc, l) => {
+                const date = new Date(l.d).toLocaleDateString();
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(l);
+                return acc;
+            }, {});
+            Object.keys(grouped).reverse().forEach(date => {
+                div.innerHTML += `<h4>${date}</h4>`;
+                grouped[date].reverse().forEach(l => {
+                    div.innerHTML += `<div class="card" style="font-size:14px"><strong>${l.n}</strong>: ${l.w}lb x ${l.r} (Pin: #${l.p})</div>`;
+                });
+            });
+        }
+    }
+
+    // --- 3. WORKOUT FLOW ---
+    function startRoutine(day, prog) {
+        sessionStart = Date.now();
+        const exercises = officialPrograms[prog][day];
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <h2>${day}</h2>
+            ${exercises.map(ex => `<div class="card" onclick="openLog('${ex}')">${ex}</div>`).join('')}
+            <button class="btn btn-sec" onclick="this.parentElement.remove()">End Workout</button>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function openLog(exName) {
+        const ex = library.find(i => i.name === exName);
+        const savedPin = profile.pins[exName] || "None";
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <h2>${exName}</h2>
+            <p style="font-size:12px; color:#8E8E93">${ex.inst}</p>
+            <p style="color:#0A84FF">Saved Pin: ${savedPin}</p>
+            <div class="input-group"><label>Weight</label><input type="number" id="log-w" value="50"></div>
+            <div class="input-group"><label>Reps</label><input type="number" id="log-r" value="10"></div>
+            <div class="input-group"><label>Current Pin</label><input type="text" id="log-p" value="${savedPin}"></div>
+            <button class="btn" onclick="saveLog('${exName}')">Log Set & Add Another</button>
+            <button class="btn btn-sec" onclick="this.parentElement.remove()">Finish Exercise</button>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function saveLog(name) {
+        const w = document.getElementById('log-w').value;
+        const r = document.getElementById('log-r').value;
+        const p = document.getElementById('log-p').value;
+        logs.push({ n: name, w: parseInt(w), r: parseInt(r), p: p, d: new Date().toISOString() });
+        localStorage.setItem('logs', JSON.stringify(logs));
+        alert("Set Logged!");
+    }
+
+    function updateWeight(v) { profile.weight = v; localStorage.setItem('profile', JSON.stringify(profile)); }
+    function updatePin(name, v) { profile.pins[name] = v; localStorage.setItem('profile', JSON.stringify(profile)); }
+
+    // Init
+    nav('dash');
+</script>
+</body>
+</html>
